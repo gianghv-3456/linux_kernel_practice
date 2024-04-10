@@ -1,1 +1,0 @@
-Write from process childWrite from process parentWrite from process child

@@ -9,6 +9,11 @@
 #define MAX_LEN 100
 #define MAX_STUDENTS 10
 
+#include <semaphore.h>
+
+#define SHM_SIZE 1024
+#define SEM_NAME "/my_semaphore"
+
 // Struct định nghĩa sinh viên
 struct Student {
     char id[MAX_LEN];
@@ -16,10 +21,16 @@ struct Student {
     char class[MAX_LEN];
 };
 
+//Semaphore instance
+sem_t *sem;
+
 // Hàm xử lý tín hiệu Ctrl+C
 void signal_handler(int signal_num) {
     if (signal_num == SIGINT) {
         printf("\nCtrl+C được nhận. Kết thúc chương trình 1...\n");
+
+        //
+        sem_post(sem);   
         exit(0);
     }
 }
@@ -65,9 +76,15 @@ int main() {
                 break;
             case 2: {
                 key_t key = ftok(".", 'S'); // Tạo key
-                int shmid = shmget(key, MAX_STUDENTS * sizeof(struct Student), IPC_CREAT | 0666); // Tạo bộ nhớ dùng chung
-                struct Student *shared_data = (struct Student *)shmat(shmid, NULL, 0); // Liên kết vùng nhớ chia sẻ
 
+                //tạo một segment SharedMemory mới hoặc truy cập vào segment có sẵn thông qua key (định danh)
+                //Quyền 0666 và IPC_CREATE: rw-
+                int shmid = shmget(key, MAX_STUDENTS * sizeof(struct Student), IPC_CREAT | 0666); 
+                
+                // Liên kết vùng nhớ chia sẻ
+                struct Student *shared_data = (struct Student *)shmat(shmid, NULL, 0); 
+
+                //Bắt đầu từ địa chỉ đầu tiên của vùng nhớ chia sẻ, copy danh sách sinh viên vào
                 printf("Da nhan Ctrl+C. Dang copy danh sach sinh vien vao vung nho chia se...\n");
                 for (int i = 0; i < num_students; ++i) {
                     strcpy(shared_data[i].id, students[i].id);

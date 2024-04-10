@@ -1,0 +1,5 @@
+make
+sudo insmod .ko
+dsmesg
+lsmod | grep modulebt4
+sudo rmmod modulebt4
